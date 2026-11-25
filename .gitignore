@@ -60,3 +60,10 @@ credentials*.json
 
 # 部署时的本机 compose 覆盖（网络 / 端口 / 镜像 tag），不入库
 /docker-compose.override.yml
+
+# 机密 env(2026-11-25 从 /etc/ 搬到项目目录):admin 口令 / master key / machine id。
+# ⚠️ 必须挡在这里 —— 上游 .gitignore 只写了 `.env` 和 `.env.*`,`deepaicode2api.env`
+# 不在覆盖范围内,漏了就会被 git add . 提交到远端仓库。
+deepaicode2api.env
+*.env
+!*.env.example

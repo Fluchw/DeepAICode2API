@@ -2,7 +2,8 @@
 #
 # 配置分三层，别混：
 #   1) 机密（账号 / 口令 / 代理 / 机器指纹）放 `DEEPAI2API_ENV_FILE`，
-#      默认 `/etc/deepaicode2api.env`（0600，root），**不要**放进代码目录；
+#      默认 `./deepaicode2api.env`（0600），**已在 .gitignore 里挡掉**（*.env）；
+#      2026-11-25 起从 /etc/ 搬进项目目录（用户要求），env 变量仍可用 DEEPAI2API_ENV_FILE 覆盖；
 #   2) 本文件里的 `environment`：服务自身的固定契约（监听地址、数据路径）；
 #   3) 命令行 / `.env`：`VERSION`、`DEEPAI2API_IMAGE`、`DEEPAI2API_ADDR` 这类
 #      部署参数（compose 的变量插值只认 `.env`，与上面 1) 的 env_file 是两件事）。
@@ -26,7 +27,7 @@ services:
       - "${DEEPAI2API_ADDR:-10087}:10087"
     env_file:
       # 允许缺失：新克隆没有该文件时 `docker compose config` 仍然可用。
-      - path: ${DEEPAI2API_ENV_FILE:-/etc/deepaicode2api.env}
+      - path: ${DEEPAI2API_ENV_FILE:-./deepaicode2api.env}
         required: false
     extra_hosts:
       # 自定义 bridge 网络不带 host.docker.internal；172.17.0.1 是默认 docker0。
@@ -54,3 +55,16 @@ services:
         max-size: "10m"
         max-file: "3"
     restart: unless-stopped
+    networks:
+      # geapi 的 op(deepaicode-token)跑在 geapi 容器里,要访问本网关的管理接口
+      # (/admin/api/login/start|callback)。⚠️ 宿主发布地址是 127.0.0.1,别的容器够不着,
+      # 所以【把本网关接进 geapi 的网络】:容器内用 http://deepaicode2api:10087 直连,
+      # 不需要 socat 中转,也不用把监听改成 0.0.0.0(那会把管理口暴露到公网)。
+      # 2026-11-25:这是手动 `docker network connect` 的声明式等价物,容器重建后仍生效。
+      - default
+      - deploy_default
+
+networks:
+  deploy_default:
+    # 已存在的外部网络(geapi 的 compose 创建,名字就叫 deploy_default)。
+    external: true
