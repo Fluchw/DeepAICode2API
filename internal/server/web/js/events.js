@@ -9,6 +9,7 @@
 import { $, closeMenu } from './dom.js';
 import { ui } from './state.js';
 import { t, translateDom, applyLang, setLang, getLang } from './i18n.js';
+import { copyText } from './oauth.js';
 import { sortState, markSort, toggleSort } from './table.js';
 import { toast } from './ui.js';
 import { confirmDialog } from './dialog.js';
@@ -98,12 +99,47 @@ function initTopBar(ctx) {
       return refresh();
     }).catch(function (e) { toast("刷新失败：" + e.message, "err"); });
   };
+  // 创建密钥：完整密钥只在这次响应里出现（列表接口是脱敏的），所以
+  // 1) 把它【留在页面上】(newKeyBox)，而不是只在 toast 里闪 4.6 秒；
+  // 2) 配一个「复制」按钮（非 HTTPS 下 navigator.clipboard 不可用，copyText 有兜底）。
+  function showNewKey(key) {
+    var box = $("#newKeyBox");
+    var hint = $("#newKeyHint");
+    var input = $("#newKeyValue");
+    if (!box || !input) return;
+    input.value = key;
+    box.style.display = "";
+    if (hint) hint.style.display = "";
+    input.focus();
+    input.select();
+  }
   $("#addKey").onclick = function () {
     api("/admin/api/keys", { method: "POST", body: { name: $("#keyName").value.trim(), group: $("#keyGroup").value.trim() } }).then(function (r) {
-      toast("已创建密钥（仅显示一次）：\n" + r.key, "ok");
       $("#keyName").value = "";
+      showNewKey(r.key);
+      toast("已创建密钥，请立即复制保存（仅显示这一次）", "ok");
       return refresh();
     }).catch(function (e) { toast("创建失败：" + e.message, "err"); });
+  };
+  $("#copyNewKey").onclick = function () {
+    var v = $("#newKeyValue").value;
+    if (!v) return;
+    copyText(v).then(function () {
+      toast("已复制到剪贴板", "ok");
+    }).catch(function () {
+      // 复制失败(老浏览器/权限拒绝)：退化为选中,让用户自己 Ctrl+C
+      var input = $("#newKeyValue");
+      input.focus();
+      input.select();
+      toast("自动复制不可用，已选中，请按 Ctrl+C 复制", "err");
+    });
+  };
+  $("#dismissNewKey").onclick = function () {
+    var box = $("#newKeyBox");
+    var hint = $("#newKeyHint");
+    $("#newKeyValue").value = "";
+    if (box) box.style.display = "none";
+    if (hint) hint.style.display = "none";
   };
   $("#reloadLogs").onclick = refreshLogs;
 

@@ -214,6 +214,16 @@
             <input id="keyGroup" class="w-170" placeholder="分组（默认 default）">
             <button class="btn primary" id="addKey">创建密钥</button>
           </div>
+          <!-- 刚创建出来的密钥：完整值只在这一刻拿得到（列表接口是脱敏的），
+               所以必须【留在页面上】+ 一键复制，不能只弹个 toast 闪 4.6 秒就没了。 -->
+          <div class="row" id="newKeyBox" style="display:none;margin-top:10px">
+            <input id="newKeyValue" class="w-340" readonly aria-label="新建的密钥">
+            <button class="btn" id="copyNewKey" type="button">复制</button>
+            <button class="btn" id="dismissNewKey" type="button">知道了</button>
+          </div>
+          <div class="hint" id="newKeyHint" style="display:none">
+            这是完整密钥，仅此一次显示。关掉后只能重新创建。
+          </div>
         </div>
         <div class="panel">
           <div class="panel-head"><h2>密钥列表</h2></div>

@@ -44,7 +44,7 @@ function poll(refresh) {
 
 // copyText 剪贴板兜底：非安全上下文（http + 非 localhost）没有
 // navigator.clipboard，退回「选中 + execCommand」。
-function copyText(text) {
+export function copyText(text) {
   if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text);
   return new Promise(function (resolve, reject) {
     var ta = document.createElement("textarea");
